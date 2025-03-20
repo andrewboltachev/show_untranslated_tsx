@@ -12,6 +12,11 @@ const jsfiles = await glob('/home/andrey/Work/ft/constructor/static/react/base/a
 //const found = [];
 
 let found = [];
+let repl = {};
+
+let printer = null, sourceFile = null;
+
+const missing = {};
 
 const extractNode = (node) => {
   let name = "";
@@ -21,11 +26,16 @@ const extractNode = (node) => {
   // https://ts-ast-viewer.com/ to see the AST of a file then use the same patterns
   // as below
 
+  let k = null;
   if (ts.isStringLiteral(node) || ts.isJsxText(node)) {
     if (/[ёа-яА-Я]/gi.exec(node.text)) {
       found.push(node.text);
-      node.text = 'ӝӝӝ'
+      k = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
+
     }
+  }
+  if (k) {
+    repl[k] = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
   }
 
   node.forEachChild(extractNode)
@@ -43,10 +53,10 @@ function extract(file) {
   // Create a Program to represent the project, then pull out the
   // source file to parse its AST.
   let program = ts.createProgram([file], { allowJs: true });
-  const sourceFile = program.getSourceFile(file);
+  sourceFile = program.getSourceFile(file);
 
   // To print the AST, we'll use TypeScript's printer
-  const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+  printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
   // To give constructive error messages, keep track of found and un-found identifiers
   const unfoundNodes = [], foundNodes = [];
@@ -64,21 +74,22 @@ function extract(file) {
       console.log("### " + f + "\n");
     });
   }*/
-  const res = printer.printFile(sourceFile);
-  if (found.length) {
-    fs.writeFileSync(file, res)
-    throw 1;
-  }
 }
 
 // Run the extract function with the script's arguments
 for (const f of jsfiles) {
   found = [];
-  const program = extract(f, []);
+  repl = {};
+  extract(f, []);
   if (found.length > 0) {
     console.log(f);
     for (const s of found) {
       console.log(`\t${s}`);
     }
+    let ff = fs.readFileSync(f, 'utf-8');
+    for (const [k, v] of Object.entries(repl)) {
+      ff = ff.replaceAll(k, v);
+    }
+    fs.writeFileSync(f, ff);
   }
 }

@@ -1,2 +1,2 @@
 all:
-	node script2.js
+	node script.js
