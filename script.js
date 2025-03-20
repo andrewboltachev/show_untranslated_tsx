@@ -9,6 +9,30 @@ import * as ts from "typescript";
 // all js files, but don't look in node_modules
 const jsfiles = await glob('/home/andrey/Work/ft/constructor/static/react/base/app/chat-center/components/**/*.tsx', { ignore: 'node_modules/**' })
 
+//const found = [];
+
+let found = [];
+
+const extractNode = (node) => {
+  let name = "";
+
+  // This is an incomplete set of AST nodes which could have a top level identifier
+  // it's left to you to expand this list, which you can do by using
+  // https://ts-ast-viewer.com/ to see the AST of a file then use the same patterns
+  // as below
+
+  if (ts.isStringLiteral(node) || ts.isJsxText(node)) {
+    if (/[ёа-яА-Я]/gi.exec(node.text)) {
+      found.push(node.text);
+    }
+  }
+
+  node.forEachChild(extractNode)
+
+  //const container = true ? foundNodes : unfoundNodes;
+  //container.push([name, node]);
+};
+
 /**
  * Prints out particular nodes from a source file
  *
@@ -27,20 +51,7 @@ function extract(file) {
   const unfoundNodes = [], foundNodes = [];
 
   // Loop through the root AST nodes of the file
-  ts.forEachChild(sourceFile, node => {
-    let name = "";
-
-    // This is an incomplete set of AST nodes which could have a top level identifier
-    // it's left to you to expand this list, which you can do by using
-    // https://ts-ast-viewer.com/ to see the AST of a file then use the same patterns
-    // as below
-    if (ts.isStringLiteral(node)) {
-      print.print(node)
-    }
-
-    const container = true ? foundNodes : unfoundNodes;
-    container.push([name, node]);
-  });
+  ts.forEachChild(sourceFile, extractNode);
 
   /*// Either print the found nodes, or offer a list of what identifiers were found
   if (!foundNodes.length) {
@@ -57,15 +68,12 @@ function extract(file) {
 
 // Run the extract function with the script's arguments
 for (const f of jsfiles) {
-  fs.readFile(f, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return;
+  found = [];
+  extract(f, []);
+  if (found.length > 0) {
+    console.log(f);
+    for (const s of found) {
+      console.log(`\t${s}`);
     }
-    extract(f, []);
-  });
-  break;
+  }
 }
-console.log(jsfiles[0]);
-
-
