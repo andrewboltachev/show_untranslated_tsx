@@ -24,6 +24,7 @@ const extractNode = (node) => {
   if (ts.isStringLiteral(node) || ts.isJsxText(node)) {
     if (/[ёа-яА-Я]/gi.exec(node.text)) {
       found.push(node.text);
+      node.text = 'ӝӝӝ'
     }
   }
 
@@ -61,15 +62,19 @@ function extract(file) {
     foundNodes.map(f => {
       const [name, node] = f;
       console.log("### " + f + "\n");
-      //console.log(printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)) + "\n";
     });
   }*/
+  const res = printer.printFile(sourceFile);
+  if (found.length) {
+    fs.writeFileSync(file, res)
+    throw 1;
+  }
 }
 
 // Run the extract function with the script's arguments
 for (const f of jsfiles) {
   found = [];
-  extract(f, []);
+  const program = extract(f, []);
   if (found.length > 0) {
     console.log(f);
     for (const s of found) {
