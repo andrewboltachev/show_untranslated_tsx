@@ -1,0 +1,21 @@
+{
+  "name": "par",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/plugin-syntax-typescript": "^7.25.9",
+    "@types/node": "^22.13.10"
+  },
+  "type": "module",
+  "dependencies": {
+    "glob": "^11.0.1",
+    "typescript": "^5.8.2"
+  }
+}
