@@ -35,7 +35,9 @@ const extractNode = (node) => {
   // as below
 
   let k = null;
-  if (ts.isStringLiteral(node) || ts.isJsxText(node)) {
+  if (ts.isStringLiteral(node) || ts.isJsxText(node)
+    //|| ts.isTemplateMiddle(node) || ts.isTemplateHead(node) || ts.isTemplateTail(node)
+  ) {
     if (/[ёа-яА-Я]/gi.exec(node.text)) {
       found.push(node.text);
       k = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
