@@ -5,9 +5,17 @@ import { glob, globSync, globStream, globStreamSync, Glob } from 'glob'
 import * as ts from "typescript";
 
 // the main glob() and globSync() resolve/return array of filenames
+//
+if (process.argv.length != 3) {
+    console.log("Please call with a folder name")
+    process.exit(1)
+}
+let arg = String(process.argv[2]).trimRight('/');
+console.log("your folder is:", arg)
+
 
 // all js files, but don't look in node_modules
-const jsfiles = await glob('/home/andrey/Work/ft/constructor/static/react/base/app/chat-center/components/**/*.tsx', { ignore: 'node_modules/**' })
+const jsfiles = await glob(`${arg}/**/*.tsx`, { ignore: 'node_modules/**' })
 
 //const found = [];
 
@@ -87,6 +95,7 @@ for (const f of jsfiles) {
       console.log(`\t${s}`);
     }
     let ff = fs.readFileSync(f, 'utf-8');
+    continue;
     for (const [k, v] of Object.entries(repl)) {
       ff = ff.replaceAll(k, v);
     }
