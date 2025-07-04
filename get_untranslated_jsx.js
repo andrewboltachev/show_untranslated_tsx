@@ -151,6 +151,16 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
   return r;
 }
 
+const normalizeWS = (s) => {
+  return s.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+}
+
+const ruFile = {};
+
+for (const item of normalizeWS(fs.readFileSync(process.env.RU_FILE_PATH, 'utf-8')).split('\n')) {
+  ruFile[item] = true;
+}
+
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
@@ -160,7 +170,12 @@ for (const f of jsfiles) {
   fText = ff;
   extract(f, []);
   for (const item of repl) {
-    console.log(item.initial.replaceAll('\r\n', ' ').replaceAll('\r', ' ').replaceAll('\n', ' '));
+    const chunk = normalizeWS(item.initial).replaceAll('\n', ' ');
+    if (!ruFile[chunk]) {
+        console.log(chunk);
+        // Дополняем
+        ruFile[chunk] = true;
+    }
   }
   ii++;
 }

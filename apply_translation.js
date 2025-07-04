@@ -15,9 +15,6 @@ console.log("your folder is:", project_dir)
 // all js files, but don't look in node_modules
 const jsfiles = await glob(`${project_dir}/**/*.tsx`, { ignore: 'node_modules/**' })
 
-//const found = [];
-
-let found = [];
 let repl = [];
 let fText = "";
 
@@ -82,7 +79,6 @@ const extractNode = (node) => {
     ts.isJsxText(node)
   ) {
     if (/[ёа-яЁА-Я]/gi.exec(node.text)) {
-      found.push(node.text);
       k = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
         if (node.text.length !== node.end - node.pos) {
             throw new Error(`Length mismatch: ${node.text.length} !== ${node.end - node.pos}`);
@@ -98,7 +94,7 @@ const extractNode = (node) => {
         trimmedRightLength
       } = trimStringWithWhitespaceCounts(node.text);
       repl.push(
-        {pos: pos + trimmedLeftLength, end: end - trimmedRightLength, code: '{boo}'}
+        {pos: pos + trimmedLeftLength, end: end - trimmedRightLength, code: '{boo}', initial: trimmedString}
       );
     }
   }
@@ -155,19 +151,36 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
   return r;
 }
 
+const normalizeWS = (s) => {
+  return s.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+}
+
+const tr = {};
+
+const enFile = [];
+for (const item of normalizeWS(fs.readFileSync(process.env.EN_FILE_PATH, 'utf-8')).split('\n')) {
+  enFile.push(item);
+}
+
+let i = 0;
+
+for (const item of normalizeWS(fs.readFileSync(process.env.RU_FILE_PATH, 'utf-8')).split('\n')) {
+  tr[item] = enFile[i];
+  i++;
+}
+
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
   //if (ii === 10) break;
-  found = [];
   repl = [];
   let ff = fs.readFileSync(f, 'utf-8');
   fText = ff;
   extract(f, []);
-  if (found.length > 0) {
-    offset = 0;
-    for (const item of repl) {
-      ff = insertStringIntoFile(ff, item);
+  for (const item of repl) {
+    const chunk = normalizeWS(item.initial).replaceAll('\n', ' ');
+    if (!ruFile[chunk] || !enFile[chunk]) {
+      tr[chunk] = 1;
     }
     fs.writeFileSync(f, ff);
   }
