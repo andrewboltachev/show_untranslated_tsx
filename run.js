@@ -4,18 +4,16 @@ import { glob, globSync, globStream, globStreamSync, Glob } from 'glob'
 
 import * as ts from "typescript";
 
+import dotenv from "dotenv";
+
 // the main glob() and globSync() resolve/return array of filenames
-//
-if (process.argv.length != 3) {
-    console.log("Please call with a folder name")
-    process.exit(1)
-}
-let arg = String(process.argv[2]).trimRight('/');
-console.log("your folder is:", arg)
+dotenv.config();
+let project_dir = process.env.PROJECT_DIR;
+console.log("your folder is:", project_dir)
 
 
 // all js files, but don't look in node_modules
-const jsfiles = await glob(`${arg}/**/*.tsx`, { ignore: 'node_modules/**' })
+const jsfiles = await glob(`${project_dir}/**/*.tsx`, { ignore: 'node_modules/**' })
 
 //const found = [];
 
