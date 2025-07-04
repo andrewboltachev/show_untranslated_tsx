@@ -58,7 +58,6 @@ function trimStringWithWhitespaceCounts(sourceString) {
     const trimmedLeftLength = startIndex;
     const trimmedRightLength = sourceString.length - (endIndex + 1);
 
-  }
     return {
         trimmedString: trimmedString,
         trimmedLeftLength: trimmedLeftLength,
@@ -161,7 +160,7 @@ for (const f of jsfiles) {
   fText = ff;
   extract(f, []);
   for (const item of repl) {
-    console.log(item.initial);
+    console.log(item.initial.replaceAll('\r\n', ' ').replaceAll('\r', ' ').replaceAll('\n', ' '));
   }
   ii++;
 }
