@@ -23,7 +23,7 @@ let found = [];
 let repl = {};
 
 let fff = "";
-let fText = "";
+//let fText = "";
 
 let printer = null, sourceFile = null;
 
@@ -39,16 +39,15 @@ const extractNode = (node) => {
 
 
   const len = node.end - node.pos;
-  for (let i = node.pos; i < node.end; i++) {
-    if (!/[ёа-яЁА-Я№ĸ]/gi.exec(node.text)) continue;
-    if (!nodes[fff]) nodes[fff] = {};
-    if (!nodes[fff][i]) {
-      nodes[fff][i] = {len, name: node.kind};
-    } else {
-      if (len < nodes[fff][i].len) {
-        nodes[fff][i] = len;
-      }
+  let matched = null;
+  for (const [kk, vv] of Object.entries(node)) {
+    if (/.*[ёа-яЁА-Я№ĸ].*/gi.exec(vv)) {
+      matched = kk;
+      break;
     }
+  }
+  if (matched) {
+    console.log(`vi +${node.pos}go ${fff} # ${ts.SyntaxKind[node.kind]} ${matched}`);
   }
 
   node.forEachChild(extractNode)
@@ -64,11 +63,11 @@ const extractNode = (node) => {
  */
 function extract(file) {
   fff = file;
-  const d = fs.readFileSync(file);
-  fText = d.toString('utf-8');
+  //const d = fs.readFileSync(file);
+  //fText = d.toString('utf-8');
   // Create a Program to represent the project, then pull out the
   // source file to parse its AST.
-  console.log(fff);
+  // console.log(fff);
   let program = ts.createProgram([file], { allowJs: true });
   sourceFile = program.getSourceFile(file);
 
@@ -96,8 +95,7 @@ function extract(file) {
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
-  if (ii === 10) break;
-  console.log(ii, jsfiles.length);
+  //console.log(ii, jsfiles.length);
   found = [];
   repl = {};
   extract(f, []);
@@ -115,15 +113,3 @@ for (const f of jsfiles) {
   }
   ii += 1;
 }
-
-const s = new Set();
-for (const [f, n] of Object.entries(nodes)) {
-  for (const [k, v] of Object.entries(n)) {
-    const sk = ts.SyntaxKind[v.name];
-    if (!['StringLiteral', 'JsxText'].includes(sk)) {
-      console.log(f, k, sk);
-    }
-  }
-}
-
-console.log(s);
