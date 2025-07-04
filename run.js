@@ -26,6 +26,49 @@ let printer = null, sourceFile = null;
 
 const missing = {};
 
+/**
+ * Trims whitespace from both ends of a string and returns the trimmed string
+ * along with the lengths of whitespace removed from the left and right.
+ *
+ * @param {string} sourceString The string to be trimmed.
+ * @returns {{trimmedString: string, trimmedLeftLength: number, trimmedRightLength: number}} An object containing the trimmed string and the lengths of whitespace removed.
+ */
+function trimStringWithWhitespaceCounts(sourceString) {
+    if (typeof sourceString !== 'string') {
+        // Optionally handle non-string inputs, e.g., convert to string or throw an error
+        sourceString = String(sourceString);
+    }
+
+    let startIndex = 0;
+    // Find the index of the first non-whitespace character from the left
+    while (startIndex < sourceString.length && /\s/.test(sourceString[startIndex])) {
+        startIndex++;
+    }
+
+    let endIndex = sourceString.length - 1;
+    // Find the index of the last non-whitespace character from the right
+    // The loop condition `endIndex >= startIndex` is crucial for handling strings
+    // that are entirely whitespace or empty.
+    while (endIndex >= startIndex && /\s/.test(sourceString[endIndex])) {
+        endIndex--;
+    }
+
+    // Extract the substring containing only the non-whitespace characters
+    // If the string was all whitespace or empty, startIndex will be >= sourceString.length,
+    // and endIndex will be < startIndex, resulting in an empty string from substring.
+    const trimmedString = sourceString.substring(startIndex, endIndex + 1);
+
+    // Calculate the lengths of trimmed whitespace
+    const trimmedLeftLength = startIndex;
+    const trimmedRightLength = sourceString.length - (endIndex + 1);
+
+    return {
+        trimmedString: trimmedString,
+        trimmedLeftLength: trimmedLeftLength,
+        trimmedRightLength: trimmedRightLength
+    };
+}
+
 const extractNode = (node) => {
   let name = "";
 
@@ -37,18 +80,25 @@ const extractNode = (node) => {
   let k = null;
   const { pos, end } = node;
   if (
-    ts.isJsxText(node) // || ts.isStringLiteral(node)
-    // TODO: || ts.isTemplateMiddle(node) || ts.isTemplateHead(node) || ts.isTemplateTail(node)
+    ts.isJsxText(node)
   ) {
     if (/[ёа-яЁА-Я]/gi.exec(node.text)) {
       found.push(node.text);
       k = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
+      console.assert(node.text.length === node.end - node.pos);
+      const {
+        trimmedString,
+        trimmedLeftLength,
+        trimmedRightLength
+      } = trimStringWithWhitespaceCounts(node.text);
       repl.push(
-        {pos, end, code: '{boo}'}
+        {pos: pos + trimmedLeftLength, end: end - (trimmedLeftLength + trimmedRightLength), code: '{boo}'}
       );
     }
   }
 
+  // TODO: ts.isStringLiteral(node)
+  // TODO: || ts.isTemplateMiddle(node) || ts.isTemplateHead(node) || ts.isTemplateTail(node)
   node.forEachChild(extractNode)
 
   //const container = true ? foundNodes : unfoundNodes;
@@ -90,11 +140,11 @@ function extract(file) {
 let offset = 0;
 
 const insertStringIntoFile = (s, {pos, end, code}) => {
-  const pos1 = pos + offset;
-  const len1 = end - pos;
-  const r = s.slice(0, pos1) + code + s.slice(pos1 + len1);
+  const posWithOffset = pos + offset;
+  const len = end - pos; // длина исходной строки
+  const r = s.slice(0, posWithOffset) + code + s.slice(posWithOffset + len);
 
-  offset += len1 - code.length;
+  offset += code.length - len;
   return r;
 }
 
