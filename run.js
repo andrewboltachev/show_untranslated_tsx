@@ -19,6 +19,7 @@ const jsfiles = await glob(`${project_dir}/**/*.tsx`, { ignore: 'node_modules/**
 
 let found = [];
 let repl = [];
+let fText = "";
 
 let printer = null, sourceFile = null;
 
@@ -83,14 +84,21 @@ const extractNode = (node) => {
     if (/[ёа-яЁА-Я]/gi.exec(node.text)) {
       found.push(node.text);
       k = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
-      console.assert(node.text.length === node.end - node.pos);
+        if (node.text.length !== node.end - node.pos) {
+            throw new Error(`Length mismatch: ${node.text.length} !== ${node.end - node.pos}`);
+        }
+        let a = fText.slice(node.pos, node.end);
+        let b = node.text;
+        if (a !== b) {
+            throw new Error(`String mismatch: ${a} !== ${b}`);
+        }
       const {
         trimmedString,
         trimmedLeftLength,
         trimmedRightLength
       } = trimStringWithWhitespaceCounts(node.text);
       repl.push(
-        {pos: pos + trimmedLeftLength, end: end - (trimmedLeftLength + trimmedRightLength), code: '{boo}'}
+        {pos: pos + trimmedLeftLength, end: end - trimmedRightLength, code: '{boo}'}
       );
     }
   }
@@ -141,8 +149,12 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
   const posWithOffset = pos + offset;
   const len = end - pos; // длина исходной строки
   const r = s.slice(0, posWithOffset) + code + s.slice(posWithOffset + len);
+  console.log({
+    original: fText.slice(pos, end),
+    initial: s.slice(posWithOffset, posWithOffset + len),
+  });
 
-  offset += code.length - len;
+  offset += (code.length - len);
   return r;
 }
 
@@ -152,13 +164,14 @@ for (const f of jsfiles) {
   if (ii === 10) break;
   found = [];
   repl = [];
+  let ff = fs.readFileSync(f, 'utf-8');
+  fText = ff;
   extract(f, []);
   if (found.length > 0) {
     console.log(f);
     for (const s of found) {
       console.log(`\t${s}`);
     }
-    let ff = fs.readFileSync(f, 'utf-8');
     offset = 0;
     for (const item of repl) {
       ff = insertStringIntoFile(ff, item);
