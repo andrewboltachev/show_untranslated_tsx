@@ -192,7 +192,9 @@ for (const f of jsfiles) {
     check = true;
     ff = insertStringIntoFile(ff, item);
   }
-  ff = `import { i18n } from '@components/services/I18nService';\n` + ff;
+  if (!/I18nService/.exec(ff)) {
+    ff = `import { i18n } from '@components/services/I18nService';\n` + ff;
+  }
   if (check) fs.writeFileSync(f, ff);
   ii++;
 }
