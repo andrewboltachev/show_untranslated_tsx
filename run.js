@@ -149,10 +149,7 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
   const posWithOffset = pos + offset;
   const len = end - pos; // длина исходной строки
   const r = s.slice(0, posWithOffset) + code + s.slice(posWithOffset + len);
-  console.log({
-    original: fText.slice(pos, end),
-    initial: s.slice(posWithOffset, posWithOffset + len),
-  });
+  console.log(s.slice(posWithOffset, posWithOffset + len));
 
   offset += (code.length - len);
   return r;
@@ -161,17 +158,13 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
-  if (ii === 10) break;
+  //if (ii === 10) break;
   found = [];
   repl = [];
   let ff = fs.readFileSync(f, 'utf-8');
   fText = ff;
   extract(f, []);
   if (found.length > 0) {
-    console.log(f);
-    for (const s of found) {
-      console.log(`\t${s}`);
-    }
     offset = 0;
     for (const item of repl) {
       ff = insertStringIntoFile(ff, item);
