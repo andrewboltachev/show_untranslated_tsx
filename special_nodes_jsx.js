@@ -96,7 +96,7 @@ function extract(file) {
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
-  //if (ii === 10) break;
+  if (ii === 10) break;
   console.log(ii, jsfiles.length);
   found = [];
   repl = {};
@@ -117,10 +117,12 @@ for (const f of jsfiles) {
 }
 
 const s = new Set();
-for (const n of Object.values(nodes)) {
-  for (const v of Object.values(n)) {
-    s.add(ts.SyntaxKind[v.name]);
-    //console.log(v.name);
+for (const [f, n] of Object.entries(nodes)) {
+  for (const [k, v] of Object.entries(n)) {
+    const sk = ts.SyntaxKind[v.name];
+    if (!['StringLiteral', 'JsxText'].includes(sk)) {
+      console.log(f, k, sk);
+    }
   }
 }
 
