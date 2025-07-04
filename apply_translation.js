@@ -12,6 +12,32 @@ let project_dir = process.env.PROJECT_DIR;
 console.log("your folder is:", project_dir)
 
 
+const normalizeWS = (s) => {
+  return s.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+}
+
+const ruFile = [];
+for (const item of normalizeWS(fs.readFileSync(process.env.RU_FILE_PATH, 'utf-8')).split('\n')) {
+  ruFile.push(item);
+}
+const enFile = [];
+for (const item of normalizeWS(fs.readFileSync(process.env.EN_FILE_PATH, 'utf-8')).split('\n')) {
+  enFile.push(item);
+}
+const keys = [];
+for (const item of normalizeWS(fs.readFileSync(process.env.KEY_FILE_PATH, 'utf-8')).split('\n')) {
+  keys.push(item);
+}
+
+const key_json = {};
+
+for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (!key) continue;
+    const ru = ruFile[i];
+    key_json[ru] = key;
+}
+
 // all js files, but don't look in node_modules
 const jsfiles = await glob(`${project_dir}/**/*.tsx`, { ignore: 'node_modules/**' })
 
@@ -141,7 +167,9 @@ function extract(file) {
 
 let offset = 0;
 
-const insertStringIntoFile = (s, {pos, end, code}) => {
+const insertStringIntoFile = (s, {pos, end, initial}) => {
+  let code = key_json[normalizeWS(initial).replace('\n', ' ')];
+  code = `{i18n.auto.${code}}`;
   const posWithOffset = pos + offset;
   const len = end - pos; // длина исходной строки
   const r = s.slice(0, posWithOffset) + code + s.slice(posWithOffset + len);
@@ -151,38 +179,20 @@ const insertStringIntoFile = (s, {pos, end, code}) => {
   return r;
 }
 
-const normalizeWS = (s) => {
-  return s.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-}
-
-const tr = {};
-
-const enFile = [];
-for (const item of normalizeWS(fs.readFileSync(process.env.EN_FILE_PATH, 'utf-8')).split('\n')) {
-  enFile.push(item);
-}
-
-let i = 0;
-
-for (const item of normalizeWS(fs.readFileSync(process.env.RU_FILE_PATH, 'utf-8')).split('\n')) {
-  tr[item] = enFile[i];
-  i++;
-}
-
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
-  //if (ii === 10) break;
   repl = [];
   let ff = fs.readFileSync(f, 'utf-8');
   fText = ff;
   extract(f, []);
+  let check = false;
+  offset = 0;
   for (const item of repl) {
-    const chunk = normalizeWS(item.initial).replaceAll('\n', ' ');
-    if (!ruFile[chunk] || !enFile[chunk]) {
-      tr[chunk] = 1;
-    }
-    fs.writeFileSync(f, ff);
+    check = true;
+    ff = insertStringIntoFile(ff, item);
   }
+  ff = `import { i18n } from '@components/services/I18nService';\n` + ff;
+  if (check) fs.writeFileSync(f, ff);
   ii++;
 }
