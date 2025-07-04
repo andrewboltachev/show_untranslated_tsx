@@ -46,8 +46,10 @@ const extractNode = (node) => {
       break;
     }
   }
-  if (matched) {
-    console.log(`vi +${node.pos}go ${fff} # ${ts.SyntaxKind[node.kind]} ${matched}`);
+  const sk = ts.SyntaxKind[node.kind];
+  if (matched && !['StringLiteral', 'JsxText'].includes(sk)) {
+    console.log(`vi +${node.pos}go ${fff} # ${sk} ${matched}`);
+    console.log(printer.printNode(ts.EmitHint.Unspecified, node, sourceFile));
   }
 
   node.forEachChild(extractNode)
@@ -95,6 +97,7 @@ function extract(file) {
 // Run the extract function with the script's arguments
 let ii = 0;
 for (const f of jsfiles) {
+  if (f !== '/home/andrei/Work/ft/constructor/static/app/settings/employees/views/table.employees.tsx') continue;
   //console.log(ii, jsfiles.length);
   found = [];
   repl = {};
